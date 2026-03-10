@@ -34,16 +34,31 @@ Notes:
 ./cs kill port 3040
 ./cs kp 3040
 ./cs logs prod 200
+./cs path
 ./cs delete <id>
 ```
 
 ### Catalog file resource: `CS_CATALOG_PATH`
 
 By default, `cs` stores commands in `$HOME/.cs/catalog.json`.
-Set `CS_CATALOG_PATH` to point to a different catalog file:
+Set `CS_CATALOG_PATH` to point to a different catalog file.
+
+For one command only:
+
+```bash
+CS_CATALOG_PATH="$HOME/my-project/.cs/catalog.json" ./cs list
+```
+
+To export for your current shell session:
 
 ```bash
 export CS_CATALOG_PATH="$HOME/my-project/.cs/catalog.json"
+```
+
+To check which catalog file `cs` is currently using:
+
+```bash
+./cs path
 ```
 
 Details:

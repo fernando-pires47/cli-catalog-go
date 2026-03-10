@@ -48,6 +48,8 @@ func (a *App) Run(args []string) int {
 		return a.runList(ctx)
 	case "delete":
 		return a.runDelete(ctx, args[1:])
+	case "path":
+		return a.runPath(args[1:])
 	default:
 		return a.runExecute(ctx, args)
 	}
@@ -108,6 +110,15 @@ func (a *App) runDelete(ctx context.Context, args []string) int {
 	debug.Event("command_deleted", map[string]string{"id": args[0]})
 
 	fmt.Printf("deleted %s\n", args[0])
+	return 0
+}
+
+func (a *App) runPath(args []string) int {
+	if len(args) != 0 {
+		return printErrf(2, "%w: usage: cs path", domain.ErrValidation)
+	}
+
+	fmt.Println(a.repo.Path)
 	return 0
 }
 
@@ -172,7 +183,11 @@ func printHelp() {
 	fmt.Println("  cs create \"<key>\" \"<value>\" [dangerous=yes|no]")
 	fmt.Println("  cs list")
 	fmt.Println("  cs delete <id>")
+	fmt.Println("  cs path")
 	fmt.Println("  cs <key...> [args...]")
+	fmt.Println("catalog file:")
+	fmt.Println("  default: $HOME/.cs/catalog.json")
+	fmt.Println("  override: set CS_CATALOG_PATH=/path/to/catalog.json")
 }
 
 func parseCreateDangerous(args []string) (bool, error) {

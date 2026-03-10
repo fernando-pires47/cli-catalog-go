@@ -225,6 +225,79 @@ func TestDebugFlagEnablesHooks(t *testing.T) {
 	}
 }
 
+func TestPathCommandPrintsEnvPath(t *testing.T) {
+	tmp := t.TempDir()
+	path := filepath.Join(tmp, "catalog.json")
+	t.Setenv("CS_CATALOG_PATH", path)
+
+	app, err := NewApp()
+	if err != nil {
+		t.Fatalf("new app: %v", err)
+	}
+
+	code, stdout, stderr := runAndCapture(t, app, []string{"path"})
+	if code != 0 {
+		t.Fatalf("path exit=%d stderr=%q", code, stderr)
+	}
+	if strings.TrimSpace(stdout) != path {
+		t.Fatalf("expected path %q, got=%q", path, stdout)
+	}
+	if stderr != "" {
+		t.Fatalf("path stderr should be empty, got=%q", stderr)
+	}
+}
+
+func TestPathCommandPrintsDefaultPath(t *testing.T) {
+	t.Setenv("CS_CATALOG_PATH", "")
+
+	app, err := NewApp()
+	if err != nil {
+		t.Fatalf("new app: %v", err)
+	}
+
+	home, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatalf("user home dir: %v", err)
+	}
+	expected := filepath.Join(home, ".cs", "catalog.json")
+
+	code, stdout, stderr := runAndCapture(t, app, []string{"path"})
+	if code != 0 {
+		t.Fatalf("path exit=%d stderr=%q", code, stderr)
+	}
+	if strings.TrimSpace(stdout) != expected {
+		t.Fatalf("expected path %q, got=%q", expected, stdout)
+	}
+	if stderr != "" {
+		t.Fatalf("path stderr should be empty, got=%q", stderr)
+	}
+}
+
+func TestHelpIncludesPathAndCatalogEnv(t *testing.T) {
+	tmp := t.TempDir()
+	path := filepath.Join(tmp, "catalog.json")
+	t.Setenv("CS_CATALOG_PATH", path)
+
+	app, err := NewApp()
+	if err != nil {
+		t.Fatalf("new app: %v", err)
+	}
+
+	code, stdout, stderr := runAndCapture(t, app, []string{"--help"})
+	if code != 0 {
+		t.Fatalf("help exit=%d stderr=%q", code, stderr)
+	}
+	if !strings.Contains(stdout, "cs path") {
+		t.Fatalf("expected help to include cs path, got=%q", stdout)
+	}
+	if !strings.Contains(stdout, "CS_CATALOG_PATH") {
+		t.Fatalf("expected help to include CS_CATALOG_PATH, got=%q", stdout)
+	}
+	if stderr != "" {
+		t.Fatalf("help stderr should be empty, got=%q", stderr)
+	}
+}
+
 func TestExecuteBindsKeyParamsIntoValue(t *testing.T) {
 	tmp := t.TempDir()
 	path := filepath.Join(tmp, "catalog.json")
