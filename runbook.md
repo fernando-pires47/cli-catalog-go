@@ -1,30 +1,12 @@
 # cs Runbook (Linux)
 
-This runbook shows how to build `cs`, point it to your project catalog, and run daily commands.
+This runbook shows how to build `cs`, point it on linux, and run daily commands.
 
 ## 1) Build and install `cs`
-
-From the project root:
-
 ```bash
 make build
-make install
-```
-
-Other useful Make targets:
-
-```bash
-make help
-make run ARGS="list"
-make test
-make clean
-```
-
-Equivalent manual build/install commands (if you do not want Make):
-
-```bash
-go build -o cs ./cmd/cs
 mkdir -p "$HOME/.local/bin"
+rm -r "$HOME/.local/bin/cs"
 cp ./cs "$HOME/.local/bin/cs"
 chmod +x "$HOME/.local/bin/cs"
 ```
@@ -65,10 +47,10 @@ Tip: You can also set `CS_CATALOG_PATH` inside a project-specific shell script a
 Create command templates:
 
 ```bash
-cs create "kill port" "sudo kill -9 $(sudo lsof -t -i:$port)"
-cs create "logs api" "kubectl logs deployment/api -n $ns --tail=$lines"
-cs create "kp $port" "sudo kill -9 $(sudo lsof -t -i:$port)"
-cs create "logs $ns $lines" "kubectl logs deployment/api -n $ns --tail=$lines"
+cs create 'kill port' 'sudo kill -9 $(sudo lsof -t -i:$port)'
+cs create 'logs api' 'kubectl logs deployment/api -n $ns --tail=$lines'
+cs create 'kp $port' 'sudo kill -9 $(sudo lsof -t -i:$port)'
+cs create 'logs $ns $lines' 'kubectl logs deployment/api -n $ns --tail=$lines'
 ```
 
 List saved commands:

@@ -7,13 +7,6 @@ Local CLI (`cs`) to create, list, delete, and execute reusable shell command tem
 ```bash
 make build
 make run ARGS="list"
-make test
-```
-
-## Build
-
-```bash
-make build
 ```
 
 ## Makefile shortcuts
