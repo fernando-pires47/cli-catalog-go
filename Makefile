@@ -1,4 +1,4 @@
-.PHONY: help build run test clean install completion
+.PHONY: help build run test clean install
 
 BINARY := cs
 CMD_DIR := ./cmd/cs
@@ -11,7 +11,6 @@ help:
 	@printf "  make test        Run all Go tests\n"
 	@printf "  make clean       Remove built binary\n"
 	@printf "  make install     Install binary to ~/.local/bin\n"
-	@printf "  make completion  Print bash completion script\n"
 
 build:
 	go build -o $(BINARY) $(CMD_DIR)
@@ -29,6 +28,3 @@ install: build
 	mkdir -p "$(LOCAL_BIN)"
 	cp ./$(BINARY) "$(LOCAL_BIN)/$(BINARY)"
 	chmod +x "$(LOCAL_BIN)/$(BINARY)"
-
-completion: build
-	./$(BINARY) completion bash

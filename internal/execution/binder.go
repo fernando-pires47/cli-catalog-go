@@ -26,14 +26,39 @@ func ExtractPlaceholders(template string) []string {
 }
 
 func Bind(template string, args []string) (string, error) {
+	return BindWithNamed(template, map[string]string{}, args)
+}
+
+func BindWithNamed(template string, named map[string]string, args []string) (string, error) {
 	placeholders := ExtractPlaceholders(template)
-	if len(placeholders) != len(args) {
-		return "", fmt.Errorf("%w: expected %d args for placeholders %v, got %d", domain.ErrValidation, len(placeholders), placeholders, len(args))
+	missing := make([]string, 0)
+	positionalIndex := 0
+	values := map[string]string{}
+
+	for _, p := range placeholders {
+		if v, ok := named[p]; ok {
+			values[p] = v
+			continue
+		}
+		if positionalIndex >= len(args) {
+			missing = append(missing, p)
+			continue
+		}
+		values[p] = args[positionalIndex]
+		positionalIndex++
+	}
+
+	if len(missing) > 0 {
+		return "", fmt.Errorf("%w: missing args for placeholders %v", domain.ErrValidation, missing)
+	}
+
+	if positionalIndex != len(args) {
+		return "", fmt.Errorf("%w: expected %d positional args for placeholders %v, got %d", domain.ErrValidation, positionalIndex, placeholders, len(args))
 	}
 
 	resolved := template
-	for i, p := range placeholders {
-		resolved = strings.ReplaceAll(resolved, "$"+p, args[i])
+	for _, p := range placeholders {
+		resolved = strings.ReplaceAll(resolved, "$"+p, values[p])
 	}
 
 	return resolved, nil

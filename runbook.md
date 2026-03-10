@@ -2,29 +2,8 @@
 
 This runbook shows how to build `cs`, point it to your project catalog, and run daily commands.
 
-## 1) Build and install `cs`
-
-From the project root:
-
 ```bash
 make build
-make install
-```
-
-Other useful Make targets:
-
-```bash
-make help
-make run ARGS="list"
-make test
-make completion
-make clean
-```
-
-Equivalent manual build/install commands (if you do not want Make):
-
-```bash
-go build -o cs ./cmd/cs
 mkdir -p "$HOME/.local/bin"
 cp ./cs "$HOME/.local/bin/cs"
 chmod +x "$HOME/.local/bin/cs"
@@ -61,28 +40,15 @@ source "$HOME/.bashrc"
 
 Tip: You can also set `CS_CATALOG_PATH` inside a project-specific shell script and source it when entering the project.
 
-## 3) Enable bash completion
-
-For current shell:
-
-```bash
-source <(cs completion bash)
-```
-
-Persist in bash:
-
-```bash
-echo 'source <(cs completion bash)' >> "$HOME/.bashrc"
-source "$HOME/.bashrc"
-```
-
-## 4) Core commands you can execute
+## 3) Core commands you can execute
 
 Create command templates:
 
 ```bash
-cs create "kill port" "sudo kill -9 $(sudo lsof -t -i:$port)"
-cs create "logs api" "kubectl logs deployment/api -n $ns --tail=$lines"
+cs create 'kill port' 'sudo kill -9 $(sudo lsof -t -i:$port)'
+cs create 'logs api' 'kubectl logs deployment/api -n $ns --tail=$lines'
+cs create 'kp $port' 'sudo kill -9 $(sudo lsof -t -i:$port)'
+cs create 'logs $ns $lines' 'kubectl logs deployment/api -n $ns --tail=$lines'
 ```
 
 List saved commands:
@@ -96,6 +62,8 @@ Run commands by key + runtime args:
 ```bash
 cs kill port 3040
 cs logs api prod 200
+cs kp 3040
+cs logs prod 200
 ```
 
 Delete by id:
@@ -104,7 +72,7 @@ Delete by id:
 cs delete <id>
 ```
 
-## 5) Safety and debug options
+## 4) Safety and debug options
 
 Enable debug logs (stderr):
 
@@ -125,7 +93,7 @@ Add extra dangerous command patterns:
 export CS_DANGER_PATTERNS="terraform destroy,helm uninstall"
 ```
 
-## 6) Quick troubleshooting
+## 5) Quick troubleshooting
 
 - `command not found: cs`
   - Confirm `~/.local/bin` is in `PATH` and re-open terminal.

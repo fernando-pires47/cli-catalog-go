@@ -10,7 +10,6 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"command-cli/internal/completion"
 	"command-cli/internal/debug"
 	"command-cli/internal/domain"
 	"command-cli/internal/execution"
@@ -49,10 +48,6 @@ func (a *App) Run(args []string) int {
 		return a.runList(ctx)
 	case "delete":
 		return a.runDelete(ctx, args[1:])
-	case "completion":
-		return runCompletion(args[1:])
-	case "__complete":
-		return a.runComplete(ctx, args[1:])
 	default:
 		return a.runExecute(ctx, args)
 	}
@@ -121,13 +116,13 @@ func (a *App) runExecute(ctx context.Context, input []string) int {
 		return printDomainError(err)
 	}
 
-	cmd, runtimeArgs, err := domain.ResolveBestMatch(input, catalog.Commands)
+	cmd, keyParams, runtimeArgs, err := domain.ResolveBestMatch(input, catalog.Commands)
 	if err != nil {
 		return printDomainError(err)
 	}
 	debug.Event("match_resolved", map[string]string{"command_id": cmd.ID, "key": cmd.Key})
 
-	resolved, err := execution.Bind(cmd.Value, runtimeArgs)
+	resolved, err := execution.BindWithNamed(cmd.Value, keyParams, runtimeArgs)
 	if err != nil {
 		return printDomainError(err)
 	}
@@ -159,28 +154,6 @@ func (a *App) runExecute(ctx context.Context, input []string) int {
 	return result.ExitCode
 }
 
-func (a *App) runComplete(ctx context.Context, args []string) int {
-	catalog, err := a.repo.Load(ctx)
-	if err != nil {
-		return 0
-	}
-	if suggestion, ok := domain.SuggestBest(args, catalog.Commands); ok {
-		fmt.Println(suggestion)
-	}
-	return 0
-}
-
-func runCompletion(args []string) int {
-	if len(args) != 1 {
-		return printErrf(2, "%w: usage: cs completion <bash>", domain.ErrValidation)
-	}
-	if args[0] != "bash" {
-		return printErrf(2, "%w: only bash completion is available in MVP", domain.ErrValidation)
-	}
-	fmt.Print(completion.BashScript())
-	return 0
-}
-
 func catalogPath() (string, error) {
 	if fromEnv := strings.TrimSpace(os.Getenv("CS_CATALOG_PATH")); fromEnv != "" {
 		return fromEnv, nil
@@ -199,7 +172,6 @@ func printHelp() {
 	fmt.Println("  cs create \"<key>\" \"<value>\"")
 	fmt.Println("  cs list")
 	fmt.Println("  cs delete <id>")
-	fmt.Println("  cs completion <bash>")
 	fmt.Println("  cs <key...> [args...]")
 }
 

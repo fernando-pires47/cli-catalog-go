@@ -118,39 +118,6 @@ func TestCLIDangerDeniedContract(t *testing.T) {
 	}
 }
 
-func TestCompletionBestSuggestionContract(t *testing.T) {
-	tmp := t.TempDir()
-	path := filepath.Join(tmp, "catalog.json")
-	t.Setenv("CS_CATALOG_PATH", path)
-
-	app, err := NewApp()
-	if err != nil {
-		t.Fatalf("new app: %v", err)
-	}
-
-	for _, args := range [][]string{
-		{"create", "kill pod", "echo 1"},
-		{"create", "kill process", "echo 2"},
-		{"create", "kill port", "echo 3"},
-	} {
-		code, _, _ := runAndCapture(t, app, args)
-		if code != 0 {
-			t.Fatalf("create exit=%d for args=%v", code, args)
-		}
-	}
-
-	code, stdout, stderr := runAndCapture(t, app, []string{"__complete", "kill", "p"})
-	if code != 0 {
-		t.Fatalf("complete exit=%d", code)
-	}
-	if strings.TrimSpace(stdout) != "kill pod" {
-		t.Fatalf("expected deterministic best suggestion, got=%q", stdout)
-	}
-	if stderr != "" {
-		t.Fatalf("completion stderr should be empty, got=%q", stderr)
-	}
-}
-
 func TestDebugLoggingHooks(t *testing.T) {
 	tmp := t.TempDir()
 	path := filepath.Join(tmp, "catalog.json")
@@ -251,6 +218,54 @@ func TestDebugFlagEnablesHooks(t *testing.T) {
 	}
 	if !strings.Contains(stderr, "event=command_created") {
 		t.Fatalf("expected debug event via --debug flag, got=%q", stderr)
+	}
+}
+
+func TestExecuteBindsKeyParamsIntoValue(t *testing.T) {
+	tmp := t.TempDir()
+	path := filepath.Join(tmp, "catalog.json")
+	t.Setenv("CS_CATALOG_PATH", path)
+
+	app, err := NewApp()
+	if err != nil {
+		t.Fatalf("new app: %v", err)
+	}
+
+	code, _, stderr := runAndCapture(t, app, []string{"create", "kp $port", "echo $port"})
+	if code != 0 {
+		t.Fatalf("create exit=%d stderr=%q", code, stderr)
+	}
+
+	code, stdout, stderr := runAndCapture(t, app, []string{"kp", "3040"})
+	if code != 0 {
+		t.Fatalf("execute exit=%d stderr=%q", code, stderr)
+	}
+	if strings.TrimSpace(stdout) != "3040" {
+		t.Fatalf("unexpected output: %q", stdout)
+	}
+}
+
+func TestExecuteBindsMultipleKeyParams(t *testing.T) {
+	tmp := t.TempDir()
+	path := filepath.Join(tmp, "catalog.json")
+	t.Setenv("CS_CATALOG_PATH", path)
+
+	app, err := NewApp()
+	if err != nil {
+		t.Fatalf("new app: %v", err)
+	}
+
+	code, _, stderr := runAndCapture(t, app, []string{"create", "logs $ns $lines", "echo $ns:$lines"})
+	if code != 0 {
+		t.Fatalf("create exit=%d stderr=%q", code, stderr)
+	}
+
+	code, stdout, stderr := runAndCapture(t, app, []string{"logs", "prod", "200"})
+	if code != 0 {
+		t.Fatalf("execute exit=%d stderr=%q", code, stderr)
+	}
+	if strings.TrimSpace(stdout) != "prod:200" {
+		t.Fatalf("unexpected output: %q", stdout)
 	}
 }
 

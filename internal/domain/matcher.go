@@ -2,17 +2,23 @@ package domain
 
 import (
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 )
 
 type Match struct {
-	Command CatalogCommand
-	KeyLen  int
+	Command      CatalogCommand
+	KeyLen       int
+	LiteralCount int
+	KeyParams    map[string]string
 }
 
-func ResolveBestMatch(inputTokens []string, commands []CatalogCommand) (CatalogCommand, []string, error) {
+var keyPlaceholderRe = regexp.MustCompile(`^\$[a-zA-Z_][a-zA-Z0-9_]*$`)
+
+func ResolveBestMatch(inputTokens []string, commands []CatalogCommand) (CatalogCommand, map[string]string, []string, error) {
 	best := make([]Match, 0)
+	bestLiteralCount := -1
 	bestLen := -1
 
 	for _, cmd := range commands {
@@ -21,8 +27,15 @@ func ResolveBestMatch(inputTokens []string, commands []CatalogCommand) (CatalogC
 			continue
 		}
 
+		captured := map[string]string{}
+		literalCount := 0
 		ok := true
 		for i := range keyTokens {
+			if name, isPlaceholder := keyPlaceholderName(keyTokens[i]); isPlaceholder {
+				captured[name] = inputTokens[i]
+				continue
+			}
+			literalCount++
 			if inputTokens[i] != keyTokens[i] {
 				ok = false
 				break
@@ -32,19 +45,20 @@ func ResolveBestMatch(inputTokens []string, commands []CatalogCommand) (CatalogC
 			continue
 		}
 
-		if len(keyTokens) > bestLen {
+		if literalCount > bestLiteralCount || (literalCount == bestLiteralCount && len(keyTokens) > bestLen) {
+			bestLiteralCount = literalCount
 			bestLen = len(keyTokens)
-			best = []Match{{Command: cmd, KeyLen: len(keyTokens)}}
+			best = []Match{{Command: cmd, KeyLen: len(keyTokens), LiteralCount: literalCount, KeyParams: captured}}
 			continue
 		}
 
-		if len(keyTokens) == bestLen {
-			best = append(best, Match{Command: cmd, KeyLen: len(keyTokens)})
+		if literalCount == bestLiteralCount && len(keyTokens) == bestLen {
+			best = append(best, Match{Command: cmd, KeyLen: len(keyTokens), LiteralCount: literalCount, KeyParams: captured})
 		}
 	}
 
 	if len(best) == 0 {
-		return CatalogCommand{}, nil, fmt.Errorf("%w: %s", ErrNotFound, strings.Join(inputTokens, " "))
+		return CatalogCommand{}, nil, nil, fmt.Errorf("%w: %s", ErrNotFound, strings.Join(inputTokens, " "))
 	}
 
 	if len(best) > 1 {
@@ -58,11 +72,18 @@ func ResolveBestMatch(inputTokens []string, commands []CatalogCommand) (CatalogC
 		for _, m := range best {
 			candidates = append(candidates, m.Command.Key)
 		}
-		return CatalogCommand{}, nil, fmt.Errorf("%w: candidates=%s", ErrAmbiguous, strings.Join(candidates, ", "))
+		return CatalogCommand{}, nil, nil, fmt.Errorf("%w: candidates=%s", ErrAmbiguous, strings.Join(candidates, ", "))
 	}
 
 	matched := best[0]
-	return matched.Command, inputTokens[matched.KeyLen:], nil
+	return matched.Command, matched.KeyParams, inputTokens[matched.KeyLen:], nil
+}
+
+func keyPlaceholderName(token string) (string, bool) {
+	if !keyPlaceholderRe.MatchString(token) {
+		return "", false
+	}
+	return strings.TrimPrefix(token, "$"), true
 }
 
 func Suggest(prefixTokens []string, commands []CatalogCommand) []string {
