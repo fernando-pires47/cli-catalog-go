@@ -34,7 +34,7 @@ Notes:
 ## Usage
 
 ```bash
-./cs create "kill port" 'sudo kill -9 $(sudo lsof -t -i:$port)'
+./cs create 'kill port' 'sudo kill -9 $(sudo lsof -t -i:$port)'
 ./cs create 'kp $port' 'sudo kill -9 $(sudo lsof -t -i:$port)'
 ./cs create 'logs $ns $lines' 'kubectl logs deployment/api -n $ns --tail=$lines'
 ./cs list
@@ -44,7 +44,20 @@ Notes:
 ./cs delete <id>
 ```
 
-Catalog path defaults to `$HOME/.cs/catalog.json` and can be overridden with `CS_CATALOG_PATH`.
+### Catalog file resource: `CS_CATALOG_PATH`
+
+By default, `cs` stores commands in `$HOME/.cs/catalog.json`.
+Set `CS_CATALOG_PATH` to point to a different catalog file:
+
+```bash
+export CS_CATALOG_PATH="$HOME/my-project/.cs/catalog.json"
+```
+
+Details:
+- If `CS_CATALOG_PATH` is set and non-empty, `cs` uses it as-is.
+- If the file does not exist yet, `cs` treats the catalog as empty until you create your first command.
+- Parent directories are created automatically when saving.
+- If the file contains invalid JSON, `cs` fails with `invalid catalog json` and includes the file path in the error message.
 
 Danger patterns can be extended with `CS_DANGER_PATTERNS` as a comma-separated list.
 Example: `CS_DANGER_PATTERNS="terraform destroy,helm uninstall"`.
