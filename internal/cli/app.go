@@ -54,11 +54,12 @@ func (a *App) Run(args []string) int {
 }
 
 func (a *App) runCreate(ctx context.Context, args []string) int {
-	if len(args) != 2 {
-		return printErrf(2, "%w: usage: cs create \"<key>\" \"<value>\"", domain.ErrValidation)
+	dangerous, err := parseCreateDangerous(args)
+	if err != nil {
+		return printDomainError(err)
 	}
 
-	cmd, err := a.repo.Create(ctx, args[0], args[1])
+	cmd, err := a.repo.Create(ctx, args[0], args[1], dangerous)
 	if err != nil {
 		return printDomainError(err)
 	}
@@ -87,10 +88,10 @@ func (a *App) runList(ctx context.Context) int {
 	})
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "id\t|\tkey\t|\tvalue")
-	fmt.Fprintln(w, "--\t|\t---\t|\t-----")
+	fmt.Fprintln(w, "id\t|\tkey\t|\tvalue\t|\tdangerous")
+	fmt.Fprintln(w, "--\t|\t---\t|\t-----\t|\t---------")
 	for _, cmd := range catalog.Commands {
-		fmt.Fprintf(w, "%s\t|\t%s\t|\t%s\n", cmd.ID, cmd.Key, cmd.Value)
+		fmt.Fprintf(w, "%s\t|\t%s\t|\t%s\t|\t%s\n", cmd.ID, cmd.Key, cmd.Value, dangerousLabel(cmd.Dangerous))
 	}
 	_ = w.Flush()
 	return 0
@@ -127,10 +128,9 @@ func (a *App) runExecute(ctx context.Context, input []string) int {
 		return printDomainError(err)
 	}
 
-	isDangerous, reasons := domain.ClassifyDanger(resolved)
-	if isDangerous {
-		prompt := fmt.Sprintf("dangerous command detected (%s). continue?", strings.Join(reasons, ", "))
-		debug.Event("danger_confirmation_prompted", map[string]string{"command_id": cmd.ID, "reasons": strings.Join(reasons, ",")})
+	if cmd.Dangerous {
+		prompt := "dangerous command detected. continue?"
+		debug.Event("danger_confirmation_prompted", map[string]string{"command_id": cmd.ID})
 		if _, err := execution.ConfirmDanger(prompt); err != nil {
 			return printDomainError(err)
 		}
@@ -169,10 +169,41 @@ func printHelp() {
 	fmt.Println("cs - local command catalog")
 	fmt.Println("usage:")
 	fmt.Println("  cs [--debug] <command>")
-	fmt.Println("  cs create \"<key>\" \"<value>\"")
+	fmt.Println("  cs create \"<key>\" \"<value>\" [dangerous=yes|no]")
 	fmt.Println("  cs list")
 	fmt.Println("  cs delete <id>")
 	fmt.Println("  cs <key...> [args...]")
+}
+
+func parseCreateDangerous(args []string) (bool, error) {
+	if len(args) < 2 || len(args) > 3 {
+		return false, fmt.Errorf("%w: usage: cs create \"<key>\" \"<value>\" [dangerous=yes|no]", domain.ErrValidation)
+	}
+	if len(args) == 2 {
+		return false, nil
+	}
+
+	parts := strings.SplitN(strings.TrimSpace(args[2]), "=", 2)
+	if len(parts) != 2 || !strings.EqualFold(strings.TrimSpace(parts[0]), "dangerous") {
+		return false, fmt.Errorf("%w: expected dangerous=yes|no", domain.ErrValidation)
+	}
+
+	value := strings.ToLower(strings.TrimSpace(parts[1]))
+	switch value {
+	case "yes":
+		return true, nil
+	case "no":
+		return false, nil
+	default:
+		return false, fmt.Errorf("%w: dangerous must be yes or no", domain.ErrValidation)
+	}
+}
+
+func dangerousLabel(dangerous bool) string {
+	if dangerous {
+		return "yes"
+	}
+	return "no"
 }
 
 func normalizeGlobalFlags(args []string) []string {

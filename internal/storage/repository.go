@@ -98,7 +98,7 @@ func (r *Repository) Save(_ context.Context, catalog domain.CatalogFile) error {
 	return nil
 }
 
-func (r *Repository) Create(ctx context.Context, key, value string) (domain.CatalogCommand, error) {
+func (r *Repository) Create(ctx context.Context, key, value string, dangerous bool) (domain.CatalogCommand, error) {
 	if err := domain.ValidateCreateInput(key, value); err != nil {
 		return domain.CatalogCommand{}, err
 	}
@@ -113,6 +113,7 @@ func (r *Repository) Create(ctx context.Context, key, value string) (domain.Cata
 		ID:        r.id(),
 		Key:       key,
 		Value:     value,
+		Dangerous: dangerous,
 		CreatedAt: now,
 		UpdatedAt: now,
 	}

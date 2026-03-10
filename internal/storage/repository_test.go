@@ -36,9 +36,12 @@ func TestCreateAndDelete(t *testing.T) {
 	tmp := t.TempDir()
 	repo := NewRepository(filepath.Join(tmp, "catalog.json"))
 
-	created, err := repo.Create(context.Background(), "k", "echo $name")
+	created, err := repo.Create(context.Background(), "k", "echo $name", true)
 	if err != nil {
 		t.Fatalf("create failed: %v", err)
+	}
+	if !created.Dangerous {
+		t.Fatal("expected created command as dangerous")
 	}
 
 	catalog, err := repo.Load(context.Background())
@@ -47,6 +50,9 @@ func TestCreateAndDelete(t *testing.T) {
 	}
 	if len(catalog.Commands) != 1 {
 		t.Fatalf("expected 1 command got=%d", len(catalog.Commands))
+	}
+	if !catalog.Commands[0].Dangerous {
+		t.Fatalf("expected persisted dangerous=true got=%v", catalog.Commands[0].Dangerous)
 	}
 
 	if err := repo.DeleteByID(context.Background(), created.ID); err != nil {

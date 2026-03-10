@@ -47,7 +47,7 @@ Tip: You can also set `CS_CATALOG_PATH` inside a project-specific shell script a
 Create command templates:
 
 ```bash
-cs create 'kill port' 'sudo kill -9 $(sudo lsof -t -i:$port)'
+cs create 'kill port' 'sudo kill -9 $(sudo lsof -t -i:$port)' dangerous=yes
 cs create 'logs api' 'kubectl logs deployment/api -n $ns --tail=$lines'
 cs create 'kp $port' 'sudo kill -9 $(sudo lsof -t -i:$port)'
 cs create 'logs $ns $lines' 'kubectl logs deployment/api -n $ns --tail=$lines'
@@ -58,6 +58,8 @@ List saved commands:
 ```bash
 cs list
 ```
+
+`cs list` shows a `dangerous` column with `yes` or `no`.
 
 Run commands by key + runtime args:
 
@@ -89,10 +91,11 @@ export CS_DEBUG=1
 cs list
 ```
 
-Add extra dangerous command patterns:
+Mark commands as dangerous at creation time:
 
 ```bash
-export CS_DANGER_PATTERNS="terraform destroy,helm uninstall"
+cs create '<key>' '<value>' dangerous=yes
+cs create '<key>' '<value>' dangerous=no
 ```
 
 ## 5) Quick troubleshooting
@@ -102,4 +105,4 @@ export CS_DANGER_PATTERNS="terraform destroy,helm uninstall"
 - `invalid catalog json`
   - Fix or remove file at `CS_CATALOG_PATH`.
 - Command requires confirmation but shell/script is non-interactive
-  - Run interactively in terminal to confirm dangerous command execution.
+  - Run interactively in terminal to confirm commands created with `dangerous=yes`.

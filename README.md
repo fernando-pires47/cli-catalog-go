@@ -27,7 +27,7 @@ Notes:
 ## Usage
 
 ```bash
-./cs create 'kill port' 'sudo kill -9 $(sudo lsof -t -i:$port)'
+./cs create 'kill port' 'sudo kill -9 $(sudo lsof -t -i:$port)' dangerous=yes
 ./cs create 'kp $port' 'sudo kill -9 $(sudo lsof -t -i:$port)'
 ./cs create 'logs $ns $lines' 'kubectl logs deployment/api -n $ns --tail=$lines'
 ./cs list
@@ -52,14 +52,20 @@ Details:
 - Parent directories are created automatically when saving.
 - If the file contains invalid JSON, `cs` fails with `invalid catalog json` and includes the file path in the error message.
 
-Danger patterns can be extended with `CS_DANGER_PATTERNS` as a comma-separated list.
-Example: `CS_DANGER_PATTERNS="terraform destroy,helm uninstall"`.
-
 Enable local debug hooks with `CS_DEBUG=1`.
 You can also enable debug logs for a single invocation with `--debug` (example: `./cs --debug list`).
 When enabled, the CLI emits debug events to stderr (`catalog_loaded`, `command_created`, `command_deleted`, `match_resolved`, `danger_confirmation_prompted`, `command_executed`).
 
 ## Dangerous command confirmation
 
-Commands matching baseline dangerous patterns (for example `rm -rf`) require confirmation via `[y/N]`.
+Commands created with `dangerous=yes` require confirmation via `[y/N]` before execution.
 In non-interactive mode, dangerous commands fail safely without execution.
+
+Create syntax supports optional explicit safety flag:
+
+```bash
+./cs create '<key>' '<value>' dangerous=yes
+./cs create '<key>' '<value>' dangerous=no
+```
+
+`./cs list` includes a `dangerous` column with `yes`/`no` values.

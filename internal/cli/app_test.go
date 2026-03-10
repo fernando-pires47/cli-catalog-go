@@ -35,8 +35,12 @@ func TestAppCreateListDeleteFlow(t *testing.T) {
 		t.Fatalf("missing list output: %q", stdout)
 	}
 	headerCols := parsePipedColumns(lines[0])
-	if len(headerCols) != 3 || headerCols[0] != "id" || headerCols[1] != "key" || headerCols[2] != "value" {
+	if len(headerCols) != 4 || headerCols[0] != "id" || headerCols[1] != "key" || headerCols[2] != "value" || headerCols[3] != "dangerous" {
 		t.Fatalf("missing list header: %q", stdout)
+	}
+	rowCols := parsePipedColumns(firstDataRow(lines))
+	if len(rowCols) != 4 || rowCols[3] != "no" {
+		t.Fatalf("expected dangerous=no in list row, got=%q", firstDataRow(lines))
 	}
 	if stderr != "" {
 		t.Fatalf("list stderr should be empty, got=%q", stderr)
@@ -96,7 +100,7 @@ func TestCLIDangerDeniedContract(t *testing.T) {
 		t.Fatalf("new app: %v", err)
 	}
 
-	code, _, _ := runAndCapture(t, app, []string{"create", "wipe", "rm -rf /tmp/safe-test"})
+	code, _, _ := runAndCapture(t, app, []string{"create", "wipe", "rm -rf /tmp/safe-test", "dangerous=yes"})
 	if code != 0 {
 		t.Fatalf("create exit=%d", code)
 	}
@@ -176,7 +180,7 @@ func TestDebugLoggingHooks(t *testing.T) {
 		t.Fatalf("missing delete debug hook: %q", stderr)
 	}
 
-	code, _, _ = runAndCapture(t, app, []string{"create", "wipe", "rm -rf /tmp/safe-test"})
+	code, _, _ = runAndCapture(t, app, []string{"create", "wipe", "rm -rf /tmp/safe-test", "dangerous=yes"})
 	if code != 0 {
 		t.Fatalf("create dangerous exit=%d", code)
 	}
@@ -266,6 +270,54 @@ func TestExecuteBindsMultipleKeyParams(t *testing.T) {
 	}
 	if strings.TrimSpace(stdout) != "prod:200" {
 		t.Fatalf("unexpected output: %q", stdout)
+	}
+}
+
+func TestCreateRejectsDangerousTrue(t *testing.T) {
+	tmp := t.TempDir()
+	path := filepath.Join(tmp, "catalog.json")
+	t.Setenv("CS_CATALOG_PATH", path)
+
+	app, err := NewApp()
+	if err != nil {
+		t.Fatalf("new app: %v", err)
+	}
+
+	code, _, stderr := runAndCapture(t, app, []string{"create", "k", "echo hi", "dangerous=true"})
+	if code != 2 || !strings.Contains(stderr, "dangerous must be yes or no") {
+		t.Fatalf("expected dangerous yes/no validation, code=%d stderr=%q", code, stderr)
+	}
+}
+
+func TestExecuteNonDangerousDoesNotRequireConfirmation(t *testing.T) {
+	tmp := t.TempDir()
+	path := filepath.Join(tmp, "catalog.json")
+	t.Setenv("CS_CATALOG_PATH", path)
+
+	app, err := NewApp()
+	if err != nil {
+		t.Fatalf("new app: %v", err)
+	}
+
+	code, _, stderr := runAndCapture(t, app, []string{"create", "hello", "printf hi", "dangerous=no"})
+	if code != 0 {
+		t.Fatalf("create exit=%d stderr=%q", code, stderr)
+	}
+
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("pipe: %v", err)
+	}
+	defer r.Close()
+	defer w.Close()
+
+	oldStdin := os.Stdin
+	os.Stdin = r
+	t.Cleanup(func() { os.Stdin = oldStdin })
+
+	code, stdout, stderr := runAndCapture(t, app, []string{"hello"})
+	if code != 0 || strings.TrimSpace(stdout) != "hi" {
+		t.Fatalf("expected non-dangerous execution without prompt, code=%d stdout=%q stderr=%q", code, stdout, stderr)
 	}
 }
 
