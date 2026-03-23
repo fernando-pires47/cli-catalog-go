@@ -18,6 +18,8 @@ coverage.*
 profile.cov
 
 packing.md
+hybrid-plan.md
+
 debian
 
 # Dependency directories (remove the comment below to include it)

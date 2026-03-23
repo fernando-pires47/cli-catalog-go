@@ -26,5 +26,6 @@ clean:
 
 install: build
 	mkdir -p "$(LOCAL_BIN)"
+	rm -r "$HOME/.local/bin/cs"
 	cp ./$(BINARY) "$(LOCAL_BIN)/$(BINARY)"
 	chmod +x "$(LOCAL_BIN)/$(BINARY)"
