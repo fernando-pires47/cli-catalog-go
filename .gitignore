@@ -8,6 +8,10 @@
 *.so
 *.dylib
 
+.opencode
+
+feature-sdd
+
 # Test binary, built with `go test -c`
 *.test
 
