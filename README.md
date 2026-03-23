@@ -2,6 +2,11 @@
 
 Local CLI (`cs`) to create, list, delete, and execute reusable shell command templates.
 
+## Platform support
+
+This implementation is currently Linux-first and the setup/docs are optimized for Linux environments.
+Support for Windows and macOS is planned for future releases.
+
 ## Quick start
 
 ```bash

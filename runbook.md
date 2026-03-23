@@ -1,6 +1,6 @@
-# cs Runbook (Linux)
+# cs Runbook
 
-This runbook shows how to build `cs`, point it on linux, and run daily commands.
+This runbook shows how to build `cs`, point it on Linux, and run daily commands.
 
 ## 1) Build and install `cs`
 ```bash
