@@ -14,6 +14,26 @@ make build
 make run ARGS="list"
 ```
 
+## Install (Ubuntu and Ubuntu-based)
+
+Install `cs` with one command:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/fernando-pires47/cli-catalog-go/main/install.sh | sh
+```
+
+Pin a specific release version:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/fernando-pires47/cli-catalog-go/main/install.sh | sh -s -- --version 0.1.0
+```
+
+Notes:
+- Supported systems: Ubuntu and Ubuntu-based distributions (for example: Xubuntu, Linux Mint, Pop!_OS).
+- Required tools on target system: `apt-get`, `dpkg`, `curl`, `sha256sum`.
+- Required release assets per version: `cs-linux-amd64`, `cs-linux-arm64`, and `checksums.txt`.
+- Release publishing steps: `docs/release-artifacts-runbook.md`.
+
 ## Makefile shortcuts
 
 ```bash
