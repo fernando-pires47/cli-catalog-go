@@ -32,7 +32,7 @@ Notes:
 - Supported systems: Ubuntu and Ubuntu-based distributions (for example: Xubuntu, Linux Mint, Pop!_OS).
 - Required tools on target system: `apt-get`, `dpkg`, `curl`, `sha256sum`.
 - Required release assets per version: `cs-linux-amd64`, `cs-linux-arm64`, and `checksums.txt`.
-- Release publishing steps: `docs/release-artifacts-runbook.md`.
+- Release publishing steps: `docs/release-via-github-actions-runbook.md`.
 
 ## Makefile shortcuts
 
