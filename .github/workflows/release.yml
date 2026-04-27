@@ -28,7 +28,7 @@ jobs:
         run: GOOS=linux GOARCH=arm64 go build -trimpath -ldflags="-s -w" -o dist/cs-linux-arm64 ./cmd/cs
 
       - name: Generate checksums
-        run: sha256sum dist/cs-linux-amd64 dist/cs-linux-arm64 > dist/checksums.txt
+        run: (cd dist && sha256sum cs-linux-amd64 cs-linux-arm64 > checksums.txt)
 
       - name: Publish release assets
         uses: softprops/action-gh-release@v2

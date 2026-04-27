@@ -143,7 +143,7 @@ verify_checksum() {
   need_cmd sha256sum
 
   asset="${BIN_NAME}-linux-${arch}"
-  expected=$(grep "  ${asset}$" "$checksums_tmp_file" | awk '{print $1}')
+  expected=$(awk -v asset="$asset" '$2 == asset || $2 == "dist/" asset { print $1; exit }' "$checksums_tmp_file")
   [ -n "$expected" ] || fail "checksum entry not found for ${asset} in checksums.txt"
 
   actual=$(sha256sum "$tmp_file" | awk '{print $1}')
